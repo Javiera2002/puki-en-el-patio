@@ -118,6 +118,8 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#btnEmpezar').addEventListener('click', () => mostrarPantalla('saludo'));
   $('#btnJugar').addEventListener('click', empezar);
   $('#btnSalir').addEventListener('click', confirmarSalida);
+  $('#btnPausa').addEventListener('click', () => Pausa.pausar());
+  $('#btnContinuar').addEventListener('click', () => Pausa.reanudar());
   $('#btnResultados').addEventListener('click', mostrarResultados);
   $('#btnDescargar').addEventListener('click', () => registro && registro.descargar());
   $('#btnVerJson').addEventListener('click', verJson);
@@ -151,7 +153,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Sin subtítulos del juego: en el video habla la narración.
     document.body.classList.add('grabacion');
     setTimeout(() => $('#btnEmpezar').click(), 1500);
-    setTimeout(() => $('#btnJugar').click(), 3500);
+    /* El play lo toca la persona que graba: los navegadores solo dejan
+       sonar una página después de un toque real. Desde ahí, todo sigue solo. */
   }
 
   // Evitar el zoom por doble toque, que en tablet arruina la interacción.

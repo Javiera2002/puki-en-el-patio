@@ -34,6 +34,7 @@ const Resumen = {
       .map((e) => e.datos.latencia_ms));
 
     let html = `<h3 class="res-titulo">${t('res.titulo')}</h3>` +
+      `<p class="res-aviso">${t('res.aviso')}</p>` +
       `<p class="res-intro">${t('res.intro')}</p>`;
     if (datos.sesion && datos.sesion.demo) {
       html += `<p class="res-demo">${t('res.demo', { p: datos.sesion.demo })}</p>`;
@@ -60,8 +61,10 @@ const Resumen = {
       html += `</ul></section>`;
     });
 
+    html += this.otras(ev, guion, t);
     html += this.participacion(ev, t);
     html += this.fortalezas(ev, guion, t);
+    html += this.caraVoz(guion, t);
     html += `<p class="res-nota">${t('res.nota')}</p>`;
     contenedor.innerHTML = html;
   },
@@ -177,6 +180,69 @@ const Resumen = {
     if (!items.length) return '';
     return `<section class="res-sub res-contexto"><h4>${t('res.fortalezas')}</h4><ul>` +
       items.map((i) => `<li>${i}</li>`).join('') + `</ul></section>`;
+  },
+
+  /* Lo que el juego registra y no se vincula a ningún ítem: las decisiones
+     sin etiqueta sdq y la torre. Solo el dato, sin ponerle nombre ni marcar
+     "para mirar" (12-10). */
+  otras(ev, guion, t) {
+    const items = [];
+    Object.entries(guion.escenas || {}).forEach(([escena_id, esc]) => {
+      Object.entries(esc.decisiones || {}).forEach(([decision_id, dec]) => {
+        if (dec.opciones.some((o) => (o.sdq || []).length)) return;
+        const e = ev.find((x) => x.escena_id === escena_id && x.datos && x.datos.decision_id === decision_id &&
+          (x.nombre === 'opcion_elegida' || x.nombre === 'opcion_por_defecto'));
+        if (!e) return;
+        const titulo = t('res.dec.' + decision_id);
+        if (e.nombre === 'opcion_por_defecto') { items.push(`${titulo}: ${t('res.sin_respuesta')}`); return; }
+        const op = dec.opciones.find((o) => o.id === e.datos.opcion_id);
+        items.push(`${titulo}: ${t('res.eligio')} «${op ? this.texto(op.texto) : e.datos.opcion_id}»`);
+      });
+    });
+
+    // La torre: ritmo antes y después del último derrumbe.
+    const derrumbes = ev.filter((e) => e.nombre === 'torre_derrumbada');
+    const bloques = ev.filter((e) => e.nombre === 'bloque_colocado');
+    if (derrumbes.length && bloques.length) {
+      const ultima = Math.max(...derrumbes.map((e) => e.datos.ronda));
+      const delNino = bloques.filter((e) => e.datos.colocado_por === 'nino');
+      const seg = (ms) => (ms === null ? '—' : (ms / 1000).toFixed(1));
+      const antes = this.mediana(delNino.filter((e) => e.datos.ronda <= ultima).map((e) => e.datos.latencia_ms));
+      const despues = this.mediana(delNino.filter((e) => e.datos.ronda > ultima).map((e) => e.datos.latencia_ms));
+      items.push(t('res.o.bloques', { a: seg(antes), d: seg(despues) }));
+      const dePuki = bloques.length - delNino.length;
+      if (dePuki) items.push(t('res.o.bloques_puki', { n: dePuki }));
+      const escena = derrumbes[0].escena_id;
+      const toques = ev.filter((e) => e.nombre === 'toque_ocioso' && e.escena_id === escena &&
+        ['post_derrumbe', 'post_climax'].includes(e.datos.contexto)).length;
+      items.push(t('res.o.toques', { n: toques }));
+    }
+    if (!items.length) return '';
+    return `<section class="res-sub res-contexto"><h4>${t('res.otras')}</h4><ul>` +
+      items.map((i) => `<li>${i}</li>`).join('') + `</ul></section>`;
+  },
+
+  /* Maqueta de cara y voz: este prototipo no usa cámara ni micrófono. Muestra
+     el tipo de información que podría entregar una versión futura, con "—"
+     en cada dato (12-10). Las filas salen de los clímax y de las ventanas de
+     escucha del guion. */
+  caraVoz(guion, t) {
+    const cara = [];
+    const voz = [];
+    Object.values(guion.escenas || {}).forEach((esc) => {
+      if (!esc.activa) return;
+      const titulo = esc.titulo ? t(esc.titulo) : '';
+      if (esc.climax) cara.push(`${titulo} · ${t('res.emo.' + esc.climax.emocion)}`);
+      Object.entries(esc.climaxes || {}).forEach(([cual, c]) =>
+        cara.push(`${titulo} · ${t('res.emo.' + c.emocion)} (${t('res.momento.' + cual)})`));
+      (esc.marcas || []).filter((m) => m.tipo === 'escucha').forEach((m) =>
+        voz.push(`${titulo}: ${t('res.voz.' + (m.modo || 'habla'))}`));
+    });
+    const fila = (txt, dato) => `<li>${txt}<span class="res-linea">${dato}: —</span></li>`;
+    return `<section class="res-sub res-maqueta"><h4>${t('res.caravoz')}</h4>` +
+      `<p class="res-maqueta-aviso">${t('res.caravoz.intro')}</p>` +
+      `<h5>${t('res.cara')}</h5><ul>` + cara.map((c) => fila(c, t('res.cara.dato'))).join('') + `</ul>` +
+      `<h5>${t('res.voz')}</h5><ul>` + voz.map((v) => `<li>${v}: —</li>`).join('') + `</ul></section>`;
   },
 
   mediana(nums) {

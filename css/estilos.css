@@ -786,6 +786,18 @@ body.sin-textos #escenario.con-imagen #placeholder { display: none; }
 .res-estado.mirar { background: #fde2d6; color: #8a3414; }
 .res-estado.neutro { background: #eef2f5; color: #4a5a66; }
 .res-estado.acompana { background: #f1ecfb; color: #4b3a7a; }
+/* Aviso de propuesta de interfaz y maqueta de cara y voz (12-10): la
+   maqueta tiene que verse distinta de lo que el juego sí registra. */
+.res-aviso {
+  margin: 0 0 10px; padding: 8px 12px; border-radius: 10px;
+  background: #e8f0fb; color: #23406b; font-size: 14px; font-weight: 700;
+}
+.res-maqueta { background: #f4f5f6; border-style: dashed; border-color: #aab4bc; color: #5b6770; }
+.res-maqueta h4 { color: #4a5a66; }
+.res-maqueta h5 { margin: 10px 0 4px; font-size: 15px; font-weight: 800; }
+.res-maqueta ul { list-style: none; margin: 0; padding: 0; }
+.res-maqueta li { padding: 3px 0; font-size: 15px; }
+.res-maqueta-aviso { margin: 0 0 6px; font-size: 14px; font-style: italic; }
 /* Con imagen, el aviso de escucha va sobre el subtítulo, no encima de él. */
 #escenario.con-imagen .escucha { bottom: 96px; }
 
@@ -973,3 +985,25 @@ body.grabacion #progreso { display: none !important; }
 /* ---- 12-10: el velo de resultados cubre toda la pantalla al bajar -------- */
 /* La pantalla #fin se desplaza; el velo queda fijo para no subirse con ella. */
 #fin.velado::before { position: fixed; }
+
+/* ---- Pausa (12-10) -------------------------------------------------------- */
+.pausa {
+  position: absolute; top: 16px; right: 104px; z-index: 6;
+  padding: 8px 14px; font-size: 18px; line-height: 1;
+  background: rgba(255, 255, 255, .6); color: var(--tinta-suave);
+  border: 2px solid var(--marco); border-radius: 12px;
+}
+.velocidad { right: 170px; }
+.capa-pausa {
+  position: absolute; inset: 0; z-index: 20; display: none;
+  flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+  background: rgba(31, 43, 52, .55);
+}
+body.pausado .capa-pausa { display: flex; }
+.capa-pausa p { margin: 0; padding: 8px 18px; border-radius: 14px; background: rgba(255, 253, 248, .92); font-size: 20px; font-weight: 700; color: var(--tinta); }
+.continuar {
+  width: 150px; height: 150px; border-radius: 50%; font-size: 64px; color: #fff;
+  background: var(--primario); box-shadow: 0 10px 0 var(--primario-oscuro);
+}
+/* Todo lo que se mueve, quieto mientras está en pausa. */
+body.pausado *, body.pausado *::before, body.pausado *::after { animation-play-state: paused !important; }
