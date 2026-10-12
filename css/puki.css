@@ -1,0 +1,98 @@
+/* ---------------------------------------------------------------------------
+   puki.css — Colores y movimiento de Puki.
+
+   Los colores son variables: cambiar la paleta de Puki es cambiar estas seis
+   líneas, no buscar valores por todo el archivo (decisión D3).
+
+   Lo importante de acá son las TRANSICIONES. Es lo que separa un muñeco
+   robótico de uno que parece vivo (ver DN-14):
+
+   - `cubic-bezier` en vez de velocidad constante: el movimiento acelera y
+     frena, como todo lo que se mueve de verdad.
+   - Las orejas tardan más que la cara (420 ms contra 260 ms), así que llegan
+     un instante después. Eso se llama arrastre y es lo que da sensación de peso.
+   - Respiración permanente: Puki nunca se queda completamente quieto.
+--------------------------------------------------------------------------- */
+
+:root {
+  --puki-cuerpo:     #BFE3D4;
+  --puki-panza:      #EAF6F0;
+  --puki-oreja:      #A5D2C0;
+  --puki-oreja-int:  #C9E6D9;
+  --puki-mejilla:    #F2A79E;
+  --puki-linea:      #37403C;
+}
+
+.puki-svg {
+  width: 100%;
+  height: 100%;
+  max-width: 340px;
+  max-height: 340px;
+  overflow: visible;
+}
+
+/* Respiración: siempre activa, aunque no pase nada en la escena. */
+.puki-todo {
+  transform-origin: 100px 170px;
+  animation: puki-respira 3.8s ease-in-out infinite;
+}
+@keyframes puki-respira {
+  0%, 100% { transform: scale(1)     translateY(0); }
+  50%      { transform: scale(1.025) translateY(-3px); }
+}
+
+/* Las orejas son lo más lento: llegan después que la cara. */
+.puki-oreja-i, .puki-oreja-d {
+  transition: transform 420ms cubic-bezier(.34, 1.4, .5, 1);
+}
+
+.puki-cuerpo {
+  transition: transform 300ms cubic-bezier(.4, 0, .2, 1);
+}
+
+.puki-globo, .puki-pupila, .puki-brillo {
+  transition: r 220ms cubic-bezier(.34, 1.5, .5, 1),
+              cy 260ms ease-out,
+              opacity 140ms linear;
+}
+
+.puki-boca, .puki-ceja-i, .puki-ceja-d, .puki-parpado {
+  transition: d 260ms ease-out, opacity 180ms linear;
+}
+
+.puki-mejilla { opacity: .75; }
+
+/* ---- Sacudidas puntuales ---------------------------------------------- */
+
+.sacude-susto  { animation: puki-susto .45s ease-out, puki-respira 3.8s ease-in-out infinite .45s; }
+.sacude-enojo  { animation: puki-enojo .55s ease-out, puki-respira 3.8s ease-in-out infinite .55s; }
+.sacude-salto  { animation: puki-salto .7s  ease-out, puki-respira 3.8s ease-in-out infinite .7s; }
+
+@keyframes puki-susto {
+  0%   { transform: translate(0, 0) scale(1); }
+  22%  { transform: translate(0, -14px) scale(1.05, .95); }
+  55%  { transform: translate(0, 4px) scale(.96, 1.04); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes puki-enojo {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  15% { transform: translate(-5px, 0) rotate(-3deg); }
+  35% { transform: translate(5px, 3px) rotate(3deg); }
+  55% { transform: translate(-4px, 0) rotate(-2deg); }
+  75% { transform: translate(3px, 2px) rotate(1deg); }
+}
+
+@keyframes puki-salto {
+  0%   { transform: translateY(0) scale(1); }
+  18%  { transform: translateY(6px) scale(1.08, .9); }
+  48%  { transform: translateY(-34px) scale(.94, 1.1); }
+  78%  { transform: translateY(5px) scale(1.07, .92); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .puki-todo { animation: none; }
+  .puki-oreja-i, .puki-oreja-d, .puki-cuerpo,
+  .puki-globo, .puki-pupila, .puki-boca { transition-duration: 1ms; }
+}

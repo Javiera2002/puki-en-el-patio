@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Puki en el patio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap">
+  <link rel="stylesheet" href="css/estilos.css?v=272">
+</head>
+<body>
+
+<!-- ==================== PANTALLA 1: inicio (adulto) ===================== -->
+<!-- Fondo: Puki saludando. Solo lo necesario a la vista; lo técnico queda
+     dentro de "Opciones avanzadas". -->
+<section id="inicio" class="pantalla activa con-fondo">
+  <div class="marca">
+    <!-- Si existe media/titulo.png, se usa esa imagen en vez del texto. -->
+    <img id="logoTitulo" src="media/titulo.png" alt="" hidden
+         onload="this.hidden=false; this.nextElementSibling.hidden=true"
+         onerror="this.remove()">
+    <div>
+      <h1 data-i18n="ui.titulo">Puki en el patio</h1>
+      <p data-i18n="ui.lema"></p>
+    </div>
+  </div>
+
+  <div class="tarjeta panel-inicio">
+    <h2 data-i18n="ui.preparar"></h2>
+    <p class="explica" data-i18n="ui.explica"></p>
+    <ul class="etiquetas">
+      <li data-i18n="ui.chip_edad"></li>
+      <li data-i18n="ui.chip_duracion"></li>
+      <li data-i18n="ui.chip_sonido"></li>
+    </ul>
+
+    <span class="rotulo" data-i18n="ui.idioma"></span>
+    <div id="botonesIdioma" class="segmentos" role="radiogroup"></div>
+
+    <button id="btnEmpezar" class="primario interactivo"><span data-i18n="ui.empezar"></span> →</button>
+
+    <p class="pie">🔒 <span data-i18n="ui.sin_datos"></span><br>
+      <span data-i18n="ui.sin_sensores"></span>
+      <span hidden><span data-i18n="ui.codigo_sesion"></span> <b id="codigoInicio"></b></span></p>
+
+    <details class="avanzadas">
+      <summary data-i18n="ui.opciones_avanzadas"></summary>
+      <div id="avisosRevision"></div>
+
+      <div class="fila">
+        <label>
+          <span data-i18n="ui.participante"></span>
+          <input id="inpParticipante" type="text" autocomplete="off">
+          <small data-i18n="ui.participante_ayuda"></small>
+        </label>
+        <label>
+          <span data-i18n="ui.grupo"></span>
+          <input id="inpGrupo" type="text" autocomplete="off" value="piloto">
+        </label>
+      </div>
+
+      <div class="fila">
+        <label>
+          <span data-i18n="ui.modo_media"></span>
+          <select id="selModo">
+            <option value="placeholder" data-i18n="ui.modo_placeholder"></option>
+            <option value="video" data-i18n="ui.modo_video" selected></option>
+          </select>
+        </label>
+        <label>
+          <span data-i18n="ui.perfil_sonido"></span>
+          <select id="selPerfil">
+            <option value="normal" data-i18n="ui.perfil_normal"></option>
+            <option value="bajo" data-i18n="ui.perfil_bajo"></option>
+          </select>
+        </label>
+      </div>
+
+      <label class="check">
+        <input id="chkSync" type="checkbox">
+        <span data-i18n="ui.pulsos_sync"></span>
+      </label>
+      <label class="check">
+        <input id="chkTextos" type="checkbox" checked>
+        <span data-i18n="ui.textos_revision"></span>
+      </label>
+      <label class="check">
+        <input id="chkVelocidad" type="checkbox">
+        <span data-i18n="ui.boton_velocidad"></span>
+      </label>
+
+    </details>
+  </div>
+</section>
+
+
+<!-- ==================== PANTALLA 2: Puki saluda (niño) ================== -->
+<!-- Misma imagen de fondo. Al tocar play parte la sesión; el video de la
+     escena 0 empieza desde este mismo cuadro, sin corte. -->
+<section id="saludo" class="pantalla con-fondo">
+  <button id="btnJugar" class="jugar interactivo" data-i18n-aria="ui.jugar">
+    <!-- El botón de Javiera (media/botones/boton_play.png); si no está, el triángulo. -->
+    <img class="play-img" src="media/botones/boton_play.png" alt=""
+         onload="this.parentElement.classList.add('con-img')" onerror="this.remove()">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>
+  </button>
+</section>
+
+
+<!-- ==================== PANTALLA 3: el juego (niño) ==================== -->
+<section id="juego" class="pantalla">
+  <div id="escenario">
+    <!-- Imagen de fondo de la escena: dos capas para pasar de una a otra con
+         un fundido. Debajo del video: si hay video, el video manda. -->
+    <div id="fondo">
+      <div class="capa-fondo"><div class="difuso"></div><img alt=""></div>
+      <div class="capa-fondo"><div class="difuso"></div><img alt=""></div>
+    </div>
+    <video id="video" playsinline preload="auto"></video>
+
+    <div id="placeholder">
+      <div id="emoji"></div>
+      <h2 id="tituloEscena"></h2>
+      <p id="narracion"></p>
+    </div>
+
+    <!-- Panel de decisiones -->
+    <div id="opciones"></div>
+
+    <!-- Minitarea de la torre -->
+    <div id="tarea"></div>
+
+    <!-- Objeto que el niño toca (la caja, la gorra) -->
+    <div id="objeto"></div>
+
+    <!-- Ventana de escucha: Puki espera que el niño hable o sople -->
+    <div id="escucha" class="escucha">👂 <span data-i18n="ui.escuchando"></span></div>
+
+    <button id="btnSalir" class="salir interactivo" data-i18n="ui.salir"></button>
+    <button id="btnVelocidad" class="velocidad interactivo" hidden></button>
+    <div id="progreso"></div>
+    <div id="ventanaBadge" class="ventana-badge"></div>
+    <div id="avisoPlaceholder" class="aviso" data-i18n="ui.aviso_placeholder"></div>
+    <!-- Modo demo: lo que se va registrando, para el video de especialistas. -->
+    <div id="demoPanel" class="demo-panel" hidden>
+      <b data-i18n="demo.titulo"></b>
+      <ul id="demoLista"></ul>
+    </div>
+  </div>
+
+  <!-- Confirmación de salida -->
+  <div id="confirmar" class="capa">
+    <div class="tarjeta chica">
+      <p data-i18n="ui.confirmar_salir"></p>
+      <div class="fila">
+        <button id="btnConfirmarNo" class="primario interactivo" data-i18n="ui.confirmar_no"></button>
+        <button id="btnConfirmarSi" class="secundario interactivo" data-i18n="ui.confirmar_si"></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== PANTALLA 4: cierre (niño) ====================== -->
+<!-- Puki se despide. Sin datos ni números. El adulto entra con un toque. -->
+<section id="cierre" class="pantalla con-fondo">
+  <button id="btnResultados" class="resultados interactivo" data-i18n="ui.ver_resultados"></button>
+</section>
+
+
+<!-- ==================== PANTALLA 5: resultados (adulto) ================= -->
+<section id="fin" class="pantalla con-fondo velado">
+  <div class="tarjeta panel-fin">
+    <h2 data-i18n="ui.sesion_terminada"></h2>
+    <p class="explica" data-i18n="ui.gracias_adulto"></p>
+
+    <div class="codigo-caja" hidden>
+      <span data-i18n="ui.codigo_sesion"></span>
+      <b id="codigoFin"></b>
+      <button id="btnCopiar" class="secundario chico interactivo" data-i18n="ui.copiar"></button>
+    </div>
+
+    <!-- Resumen para el profesional: lo principal de esta pantalla. -->
+    <div id="resumenProfesional" class="res"></div>
+
+    <a id="btnCuestionario" class="primario boton-grande interactivo" target="_blank" rel="noopener" hidden>
+      <span data-i18n="ui.cuestionario"></span> →</a>
+
+    <div class="fila acciones">
+      <button id="btnDetalle" class="secundario interactivo" data-i18n="ui.ver_detalle"></button>
+      <button id="btnDescargar" class="secundario interactivo" data-i18n="ui.descargar"></button>
+      <button id="btnNueva" class="secundario interactivo" data-i18n="ui.nueva_sesion"></button>
+    </div>
+
+    <!-- Detalle técnico: oculto hasta que el adulto lo pide. -->
+    <div id="detalle" hidden>
+      <div id="resumen" class="resumen"></div>
+      <div id="revision"></div>
+      <details class="rv-mas" hidden>
+        <summary data-i18n="rv.tabla_ventanas"></summary>
+        <table id="tablaVentanas" class="tabla"></table>
+      </details>
+      <button id="btnVerJson" class="secundario chico interactivo" data-i18n="ui.ver_json"></button>
+    </div>
+  </div>
+</section>
+
+
+<!-- Datos primero, después el código. -->
+<script src="data/i18n.es.js?v=272"></script>
+<script src="data/i18n.pt.js?v=272"></script>
+<script src="data/i18n.en.js?v=272"></script>
+<script src="data/guion.js?v=272"></script>
+
+<script src="js/i18n.js?v=272"></script>
+<script src="js/sonido.js?v=272"></script>
+<script src="js/reloj.js?v=272"></script>
+<script src="js/registro.js?v=272"></script>
+<script src="js/dibujos.js?v=272"></script>
+<script src="js/revision.js?v=272"></script>
+<script src="js/resumen.js?v=272"></script>
+<script src="js/motor.js?v=272"></script>
+<script src="js/app.js?v=272"></script>
+</body>
+</html>

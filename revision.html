@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Puki — revisar sesiones</title>
+  <link rel="stylesheet" href="css/estilos.css">
+  <style>
+    /* Esta página es para el adulto: se desplaza y deja seleccionar texto. */
+    html, body { height: auto; overflow: auto; -webkit-user-select: text; user-select: text; }
+    .rv-pagina { max-width: 1180px; margin: 0 auto; padding: 32px 24px 60px; }
+    .rv-barra { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin: 18px 0 8px; }
+    .rv-barra .boton {
+      display: inline-block; margin: 0; padding: 14px 22px; border-radius: 14px;
+      font-weight: 800; font-size: 17px; cursor: pointer; text-decoration: none;
+    }
+    .rv-barra .boton > span { display: inline; margin: 0; font-size: 17px; }
+    .rv-guardadas { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+    .rv-guardada {
+      display: flex; gap: 12px; align-items: center; padding: 10px 14px;
+      background: #fff; border: 2px solid var(--marco); border-radius: 12px; font-size: 15px;
+    }
+    .rv-guardada span { flex: 1; }
+    .rv-guardada button { padding: 8px 14px; font-size: 14px; }
+    #revision {
+      background: #fff; border: 3px solid var(--marco); border-radius: var(--radio);
+      padding: 8px 28px 24px;
+    }
+    #revision:empty { display: none; }
+  </style>
+</head>
+<body>
+<main class="rv-pagina">
+  <h1 data-i18n="rv.pagina_titulo"></h1>
+  <p class="sub" data-i18n="rv.pagina_sub"></p>
+
+  <div class="rv-barra">
+    <label class="boton primario">
+      <span data-i18n="rv.abrir_json"></span>
+      <input id="inpJson" type="file" accept=".json,application/json" hidden>
+    </label>
+    <a class="boton secundario" href="index.html" data-i18n="rv.volver"></a>
+  </div>
+
+  <h2 class="rv-titulo" data-i18n="rv.guardadas"></h2>
+  <div id="guardadas" class="rv-guardadas"></div>
+
+  <div id="resumenSesion" class="resumen"></div>
+  <div id="resumenProfesional" class="res"></div>
+  <div id="revision"></div>
+</main>
+
+<script src="data/i18n.es.js"></script>
+<script src="data/i18n.pt.js"></script>
+<script src="data/i18n.en.js"></script>
+<script src="data/guion.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/dibujos.js"></script>
+<script src="js/revision.js"></script>
+<script src="js/resumen.js"></script>
+<script>
+  /* Revisar sesiones: abre un JSON descargado, o una de las copias que el
+     juego deja en este navegador al terminar (registro.guardarLocal). Nada
+     sale del dispositivo. */
+  I18n.aplicar();
+
+  const cont = document.getElementById('revision');
+
+  function mostrar(datos) {
+    if (!datos || !datos.sesion || !Array.isArray(datos.eventos)) {
+      cont.textContent = I18n.t('rv.error_json');
+      return;
+    }
+    const s = datos.sesion;
+    document.getElementById('resumenSesion').innerHTML =
+      `<div class="dato"><b>${Revision.esc(s.id_participante)}</b>${Revision.esc(fecha(s))}</div>` +
+      `<div class="dato"><b>${Revision.seg(s.duracion_ms || 0)}</b>${I18n.t('ui.duracion')}</div>` +
+      `<div class="dato"><b>${datos.eventos.length}</b>${I18n.t('ui.eventos_registrados')}</div>`;
+    Resumen.pintar(document.getElementById('resumenProfesional'), datos, window.GUION);
+    Revision.pintar(cont, datos);
+    document.getElementById('resumenProfesional').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function fecha(s) {
+    return s.t0_epoch_ms ? new Date(s.t0_epoch_ms).toLocaleString('es-CL') : '';
+  }
+
+  // El mismo nombre que le pone el juego al descargar (registro.nombreArchivo).
+  function nombreArchivo(s) {
+    const d = new Date(s.t0_epoch_ms);
+    const p = (n) => String(n).padStart(2, '0');
+    return `puki_${s.id_participante}_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_` +
+      `${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}_${String(s.id_sesion).slice(0, 8)}.json`;
+  }
+
+  function descargar(datos) {
+    const blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = nombreArchivo(datos.sesion);
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+
+  document.getElementById('inpJson').addEventListener('change', (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const lector = new FileReader();
+    lector.onload = () => {
+      try { mostrar(JSON.parse(lector.result)); }
+      catch (err) { cont.textContent = I18n.t('rv.error_json'); }
+    };
+    lector.readAsText(f);
+  });
+
+  // Las copias guardadas en este navegador, de la más nueva a la más vieja.
+  const lista = document.getElementById('guardadas');
+  const guardadas = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k.indexOf('puki.sesion.') !== 0) continue;
+      try { guardadas.push(JSON.parse(localStorage.getItem(k))); } catch (e) {}
+    }
+  } catch (e) {}
+  guardadas.sort((a, b) => (b.sesion.t0_epoch_ms || 0) - (a.sesion.t0_epoch_ms || 0));
+
+  if (!guardadas.length) {
+    lista.innerHTML = `<p class="sub">${I18n.t('rv.ninguna')}</p>`;
+  }
+  guardadas.forEach((d) => {
+    const s = d.sesion;
+    const fila = document.createElement('div');
+    fila.className = 'rv-guardada';
+    const v = (s.velocidad_revision && s.velocidad_revision !== 1 ? ` · ×${s.velocidad_revision}` : '') +
+      (s.demo ? ` · demo (${Revision.esc(s.demo)})` : '');
+    fila.innerHTML =
+      `<span><b>${Revision.esc(s.id_participante)}</b> · ${Revision.esc(fecha(s))} · ` +
+      `${Revision.seg(s.duracion_ms || 0)}${v}</span>` +
+      `<button class="secundario">${I18n.t('rv.ver')}</button>` +
+      `<button class="secundario">${I18n.t('rv.descargar')}</button>`;
+    const [bVer, bBajar] = fila.querySelectorAll('button');
+    bVer.onclick = () => mostrar(d);
+    bBajar.onclick = () => descargar(d);
+    lista.appendChild(fila);
+  });
+</script>
+</body>
+</html>
