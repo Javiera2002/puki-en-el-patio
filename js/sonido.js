@@ -49,6 +49,8 @@ const Sonido = {
      sonar nada antes de que la persona interactúe con la página. */
   iniciar(idioma, perfil) {
     if (idioma) this.idiomaVoz = idioma === 'pt' ? 'pt-BR' : idioma === 'en' ? 'en-US' : 'es-CL';
+    // Chrome entrega la lista de voces con retraso: se pide desde ya.
+    try { if ('speechSynthesis' in window) speechSynthesis.getVoices(); } catch (e) {}
     try {
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
       if (this.ctx.state === 'suspended') this.ctx.resume();
@@ -346,10 +348,16 @@ const Sonido = {
     try {
       const u = new SpeechSynthesisUtterance(texto);
       u.lang = cfg.idioma || this.idiomaVoz;
+      const voz = this._mejorVoz(u.lang);
+      if (voz) u.voice = voz;
       // Más lento y más agudo: se entiende mejor a los 4 años y suena a criatura
       // chica, no a locutor. Cada personaje trae sus valores desde el guion.
       u.rate = cfg.rate !== undefined ? cfg.rate : 0.88;
-      u.pitch = cfg.pitch !== undefined ? cfg.pitch : 1.5;
+      let tono = cfg.pitch !== undefined ? cfg.pitch : 1.5;
+      // En inglés las voces suenan metálicas con el tono tan alto: se sube
+      // menos (Puki 1.5 → 1.2, Lira 1.8 → 1.32).
+      if (u.lang.indexOf('en') === 0) tono = 1 + (tono - 1) * 0.4;
+      u.pitch = tono;
       u.volume = Math.min(1, (cfg.volumen !== undefined ? cfg.volumen : 0.9) * this.niveles.voz);
 
       // Se guarda una referencia mientras suena: algunos navegadores pierden
@@ -368,6 +376,28 @@ const Sonido = {
       console.warn('Sin voz:', e);
       return false;
     }
+  },
+
+  /* Elige la voz más natural instalada para el idioma: primero las
+     "Natural" u "Online" de Microsoft, después las de Google, después
+     cualquiera del idioma. Si no hay, el navegador usa la suya. */
+  _mejorVoz(lang) {
+    if (!('speechSynthesis' in window)) return null;
+    const voces = speechSynthesis.getVoices();
+    if (!voces.length) return null;
+    const pref = lang.slice(0, 2).toLowerCase();
+    const delIdioma = voces.filter((v) => (v.lang || '').toLowerCase().replace('_', '-').indexOf(pref) === 0);
+    if (!delIdioma.length) return null;
+    const exacta = (v) => (v.lang || '').toLowerCase().replace('_', '-') === lang.toLowerCase();
+    const puntaje = (v) => {
+      let p = 0;
+      if (/natural/i.test(v.name)) p += 8;
+      if (/online/i.test(v.name)) p += 4;
+      if (/google/i.test(v.name)) p += 6;
+      if (exacta(v)) p += 2;
+      return p;
+    };
+    return delIdioma.slice().sort((a, b) => puntaje(b) - puntaje(a))[0];
   },
 
   hablando() {

@@ -969,3 +969,7 @@ body.grabacion #progreso { display: none !important; }
 #escenario.preguntando .rep-centro { grid-template-columns: repeat(6, 58px); gap: 8px; }
 #escenario.preguntando .rep-moneda .dib { width: 54px; height: 54px; }
 #escenario.preguntando #tarea.visible:has(.rep-mesa) { gap: 1.6vh 2.2vw; }
+
+/* ---- 12-10: el velo de resultados cubre toda la pantalla al bajar -------- */
+/* La pantalla #fin se desplaza; el velo queda fijo para no subirse con ella. */
+#fin.velado::before { position: fixed; }
